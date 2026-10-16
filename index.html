@@ -191,7 +191,15 @@ fieldset.seg input:focus-visible+label{outline:3px solid var(--leaf);outline-off
     <div id="dia-body" style="display:flex;flex-direction:column;gap:16px" hidden>
     <div class="dotbar">
       <span><b class="num" id="t-dot">0</b> personas · jornada 8 h</span>
-      <button type="button" class="btn ghost small" id="dot-edit">Cambiar dotación</button>
+      <span class="actions" style="gap:6px">
+        <button type="button" class="btn ghost small" id="dot-edit">Cambiar dotación</button>
+        <button type="button" class="btn danger small" id="dia-del">Eliminar día</button>
+      </span>
+    </div>
+    <div class="confirm" id="dia-confirm" hidden>
+      <span id="dia-confirm-txt">¿Eliminar este día?</span>
+      <button type="button" class="btn danger small" id="dia-del-yes">Sí, eliminar y partir de nuevo</button>
+      <button type="button" class="btn ghost small" id="dia-del-no">No</button>
     </div>
     <div class="totals">
       <div><b id="t-lab">0</b><span>Labores</span></div>
@@ -407,6 +415,21 @@ function updateDotCalc(){
   $("d-calc").innerHTML = `Jornada de ${JORNADA} h · máximo <b>${fmtNum(n*JORNADA)}</b> horas-hombre`;
 }
 $("d-personas").oninput=()=>{ $("d-error").hidden=true; updateDotCalc(); };
+$("dia-del").onclick=()=>{
+  const f=$("fecha").value||hoy, n=(days.get(f)?.labores||[]).length;
+  $("dia-confirm-txt").textContent = n
+    ? `Se borrarán la dotación y las ${n} labor${n===1?"":"es"} de este día.`
+    : "Se borrará la dotación de este día.";
+  $("dia-confirm").hidden=false;
+};
+$("dia-del-no").onclick=()=>{ $("dia-confirm").hidden=true; };
+$("dia-del-yes").onclick=async()=>{
+  const f=$("fecha").value||hoy;
+  $("dia-del-yes").disabled=true;
+  const ok=await saveDay(f,[],0);
+  $("dia-del-yes").disabled=false;
+  if(ok){ $("dia-confirm").hidden=true; resetForm(); renderDia(); toast("Día eliminado"); $("d-personas").focus(); }
+};
 $("dot-edit").onclick=()=>{ dotEditing=true; $("d-personas").value=dotOf($("fecha").value||hoy)||""; $("d-error").hidden=true; renderDia(); $("d-personas").focus(); };
 $("d-cancel").onclick=()=>{ dotEditing=false; $("d-error").hidden=true; renderDia(); };
 $("dot-form").addEventListener("submit",async e=>{
@@ -434,7 +457,7 @@ function editLabor(id){
   $("form").scrollIntoView({behavior:"smooth",block:"start"});
 }
 function resetForm(){
-  editingId=null; dotEditing=false; $("d-personas").value=""; $("d-error").hidden=true; $("form").reset(); $("f-error").hidden=true; syncModo();
+  editingId=null; dotEditing=false; $("dia-confirm").hidden=true; $("d-personas").value=""; $("d-error").hidden=true; $("form").reset(); $("f-error").hidden=true; syncModo();
   $("form-title").textContent="Agregar labor del día"; $("f-save").textContent="Guardar labor";
   $("f-cancel").hidden=true; $("f-del").hidden=true; $("f-confirm").hidden=true; updateCalc();
 }
