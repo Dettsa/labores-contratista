@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#5b2346">
+<title>Libro de Faenas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: una columna de campo, pensada para el celular; pestañas Día / Historial / Resumen */
+:root{
+  --bg:#f3f4ef; --surface:#ffffff; --ink:#1f2420; --muted:#62695f; --line:#d9ddd2;
+  --grape:#5b2346; --grape-soft:#f1e4ec; --leaf:#3f6b34; --leaf-soft:#e3eddc; --danger:#a3352b;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-num:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#161915; --surface:#1f231e; --ink:#e8ebe4; --muted:#9aa294; --line:#343a31;
+  --grape:#e3a6c8; --grape-soft:#3a2432; --leaf:#9cc98c; --leaf-soft:#25331f; --danger:#f08b80; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#161915; --surface:#1f231e; --ink:#e8ebe4; --muted:#9aa294; --line:#343a31;
+  --grape:#e3a6c8; --grape-soft:#3a2432; --leaf:#9cc98c; --leaf-soft:#25331f; --danger:#f08b80; color-scheme:dark}
+
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5}
+.topline{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.who{display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:13px;color:var(--muted);min-width:0;text-align:right;overflow-wrap:anywhere}
+form.login{max-width:420px;width:100%;margin:0 auto}
+.wrap{max-width:720px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
+header.top{display:flex;flex-direction:column;gap:2px}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--leaf);font-weight:700}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(28px,7vw,40px);line-height:1.05;margin:0;color:var(--grape);text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:600;font-size:20px;margin:0;text-wrap:balance}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+
+nav.tabs{display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+nav.tabs button{border:0;background:transparent;color:var(--muted);font:700 15px var(--f-body);padding:10px 4px;border-radius:9px;cursor:pointer}
+nav.tabs button[aria-selected="true"]{background:var(--grape);color:var(--surface)}
+
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--leaf);outline-offset:2px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}
+.btn.primary{background:var(--leaf);border-color:var(--leaf);color:var(--surface)}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--danger);border-color:var(--danger);background:transparent}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+.daybar{display:flex;align-items:center;gap:8px}
+.daybar input{flex:1;min-width:0;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.daybar .btn{padding:10px 14px}
+.dayname{font-family:var(--f-display);font-size:22px;font-weight:600;text-transform:capitalize}
+
+.totals{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.totals div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column}
+.totals b{font-family:var(--f-num);font-size:22px;font-variant-numeric:tabular-nums}
+.totals span{font-size:12px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+
+ul.labores{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+ul.labores li{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:12px 14px;border-top:1px solid var(--line);cursor:pointer}
+ul.labores li:first-child{border-top:0}
+ul.labores li:hover{background:var(--leaf-soft)}
+ul.labores li.editing{background:var(--grape-soft)}
+.lname{font-weight:700;min-width:0}
+.lmeta{font-size:14px;color:var(--muted);grid-column:1;min-width:0;overflow-wrap:anywhere}
+.lhh{grid-row:1/span 2;grid-column:2;text-align:right;align-self:center}
+.lhh b{display:block;font-family:var(--f-num);font-size:18px}
+.lhh small{color:var(--muted);font-size:12px}
+.empty{border:1px dashed var(--line);border-radius:12px;padding:18px;color:var(--muted);text-align:center}
+
+form.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:13px;font-weight:700;color:var(--muted)}
+.field input,.field select,.field textarea{padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);width:100%;box-sizing:border-box}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.calc{font-size:14px;color:var(--muted)}
+.calc b{color:var(--ink);font-family:var(--f-num)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.actions .grow{flex:1}
+.confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px;border-radius:10px;background:var(--grape-soft)}
+
+.filter{display:flex;gap:8px;flex-wrap:wrap;align-items:end}
+.filter .field{flex:1;min-width:130px}
+ul.days{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+ul.days li{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;cursor:pointer}
+ul.days li:hover{border-color:var(--leaf)}
+.dtitle{font-weight:700;text-transform:capitalize}
+.chips{display:flex;flex-wrap:wrap;gap:4px;grid-column:1/-1}
+.chip{font-size:12px;background:var(--leaf-soft);color:var(--leaf);padding:2px 8px;border-radius:99px;font-weight:700}
+
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;min-width:420px}
+th,td{padding:10px 12px;text-align:left;border-top:1px solid var(--line);font-size:15px}
+thead th{border-top:0;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td.r,th.r{text-align:right;font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.bar{height:8px;border-radius:4px;background:var(--grape);margin-top:6px;min-width:2px}
+tfoot td{font-weight:700;border-top:2px solid var(--ink)}
+.note{font-size:13px;color:var(--muted)}
+form.start{border:2px solid var(--leaf)}
+fieldset.seg{border:0;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+fieldset.seg legend{font-size:13px;font-weight:700;color:var(--muted);padding:0;margin-bottom:4px}
+fieldset.seg input{position:absolute;opacity:0;pointer-events:none}
+fieldset.seg label{border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;font-weight:700;display:flex;flex-direction:column;background:var(--bg)}
+fieldset.seg label small{font-weight:400;font-size:12px;color:var(--muted)}
+fieldset.seg input:checked+label{border-color:var(--leaf);background:var(--leaf-soft);color:var(--leaf)}
+#m-trato:checked+label{border-color:var(--grape);background:var(--grape-soft);color:var(--grape)}
+fieldset.seg input:focus-visible+label{outline:3px solid var(--leaf);outline-offset:2px}
+.tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:1px 7px;border-radius:99px;vertical-align:2px;margin-left:6px}
+.tag.dia{background:var(--leaf-soft);color:var(--leaf)}
+.tag.trato{background:var(--grape-soft);color:var(--grape)}
+.chip.trato{background:var(--grape-soft);color:var(--grape)}
+.dotbar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;background:var(--leaf-soft);color:var(--leaf);border-radius:10px;padding:8px 8px 8px 14px;font-weight:700}
+.btn.small{padding:6px 10px;font-size:14px}
+.cap{height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+.cap-fill{height:100%;background:var(--leaf);width:0}
+.cap-fill.full{background:var(--grape)}
+.calc .warn{color:var(--danger);font-weight:700}
+#f-error,#d-error{color:var(--danger);font-weight:700}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:700;z-index:20}
+.status{font-size:13px;color:var(--muted)}
+@media (prefers-reduced-motion: no-preference){ul.labores li,ul.days li{transition:background .15s,border-color .15s}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="topline">
+      <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+        <span class="eyebrow">Viña · Registro del contratista</span>
+        <h1>Libro de Faenas</h1>
+      </div>
+      <div class="who" id="who" hidden>
+        <span id="who-email"></span>
+        <button type="button" class="btn ghost small" id="logout">Cerrar sesión</button>
+      </div>
+    </div>
+    <span class="status" id="status">Cargando…</span>
+  </header>
+
+  <form class="card login" id="login" novalidate hidden>
+    <h2>Ingresar</h2>
+    <div class="field">
+      <label for="l-email">Email</label>
+      <input id="l-email" type="email" autocomplete="username" inputmode="email" required>
+    </div>
+    <div class="field">
+      <label for="l-pass">Contraseña</label>
+      <input id="l-pass" type="password" autocomplete="current-password" required>
+    </div>
+    <div class="note" id="l-error" hidden style="color:var(--danger);font-weight:700"></div>
+    <button type="submit" class="btn primary" id="l-btn">Ingresar</button>
+    <p class="note" style="margin:0">Si no tienes cuenta o olvidaste tu contraseña, pídesela al administrador del predio.</p>
+  </form>
+
+  <div id="app" hidden style="display:flex;flex-direction:column;gap:20px">
+  <nav class="tabs" role="tablist">
+    <button role="tab" id="tab-dia" aria-selected="true" data-view="dia">Día</button>
+    <button role="tab" id="tab-hist" aria-selected="false" data-view="hist">Historial</button>
+    <button role="tab" id="tab-res" aria-selected="false" data-view="res">Resumen</button>
+  </nav>
+
+  <!-- DÍA -->
+  <section id="view-dia" style="display:flex;flex-direction:column;gap:16px">
+    <div class="daybar">
+      <button class="btn" id="prev" aria-label="Día anterior">‹</button>
+      <input type="date" id="fecha" aria-label="Fecha">
+      <button class="btn" id="next" aria-label="Día siguiente">›</button>
+      <button class="btn ghost" id="hoy">Hoy</button>
+    </div>
+    <div class="dayname" id="dayname"></div>
+
+    <form class="card start" id="dot-form" novalidate hidden>
+      <h2 id="dot-title">Inicio del día</h2>
+      <div class="field">
+        <label for="d-personas">¿Cuántas personas trajo hoy el contratista?</label>
+        <input id="d-personas" type="number" inputmode="numeric" min="1" step="1" placeholder="Ej: 12">
+      </div>
+      <div class="calc" id="d-calc">Jornada de 8 h · máximo <b>0</b> horas-hombre</div>
+      <div class="note" id="d-error" hidden></div>
+      <div class="actions">
+        <button type="submit" class="btn primary grow" id="d-save">Iniciar día</button>
+        <button type="button" class="btn ghost" id="d-cancel" hidden>Cancelar</button>
+      </div>
+    </form>
+
+    <div id="dia-body" style="display:flex;flex-direction:column;gap:16px" hidden>
+    <div class="dotbar">
+      <span><b class="num" id="t-dot">0</b> personas · jornada 8 h</span>
+      <button type="button" class="btn ghost small" id="dot-edit">Cambiar dotación</button>
+    </div>
+    <div class="totals">
+      <div><b id="t-lab">0</b><span>Labores</span></div>
+      <div><b id="t-hh">0</b><span>H-h asignadas</span></div>
+      <div><b id="t-rest">0</b><span>H-h disponibles</span></div>
+    </div>
+    <div class="cap"><div class="cap-fill" id="cap-fill"></div></div>
+    <div class="note" id="cap-txt"></div>
+    <div id="lista"></div>
+
+    <form class="card" id="form" novalidate>
+      <h2 id="form-title">Agregar labor del día</h2>
+      <div class="field">
+        <label for="f-labor">Labor</label>
+        <input id="f-labor" list="dl-labores" placeholder="Ej: Desbrote" required autocomplete="off">
+        <datalist id="dl-labores"></datalist>
+      </div>
+      <fieldset class="seg" id="f-modo">
+        <legend>Forma de pago</legend>
+        <input type="radio" name="modo" id="m-dia" value="dia" checked><label for="m-dia">Al día<small>Pago fijo por jornada</small></label>
+        <input type="radio" name="modo" id="m-trato" value="trato"><label for="m-trato">Al trato<small>Pago por avance</small></label>
+      </fieldset>
+      <div class="field" id="trato-box" hidden>
+        <label for="f-avance">Avance logrado</label>
+        <input id="f-avance" type="text" placeholder="Ej: 12 hileras completas y media" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="f-cuartel">Cuartel</label>
+        <input id="f-cuartel" list="dl-cuarteles" placeholder="Ej: Cuartel 3" autocomplete="off" required>
+        <datalist id="dl-cuarteles"></datalist>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="f-personas">Personas</label>
+          <input id="f-personas" type="number" inputmode="numeric" min="1" step="1" placeholder="0" required>
+        </div>
+        <div class="field">
+          <label for="f-horas">Horas en la labor</label>
+          <input id="f-horas" type="number" inputmode="decimal" min="0.5" max="8" step="0.5" placeholder="Máx. 8" required>
+        </div>
+      </div>
+      <div class="calc" id="calc">Horas-hombre: <b>0</b></div>
+      <div class="field">
+        <label for="f-nota">Observación (opcional)</label>
+        <textarea id="f-nota" rows="2" placeholder="Ej: se avanzó hasta la hilera 40"></textarea>
+      </div>
+      <div class="note" id="f-error" hidden></div>
+      <div class="actions">
+        <button type="submit" class="btn primary grow" id="f-save">Guardar labor</button>
+        <button type="button" class="btn ghost" id="f-cancel" hidden>Cancelar</button>
+        <button type="button" class="btn danger" id="f-del" hidden>Eliminar</button>
+      </div>
+      <div class="confirm" id="f-confirm" hidden>
+        <span>¿Eliminar esta labor del día?</span>
+        <button type="button" class="btn danger" id="f-del-yes">Sí, eliminar</button>
+        <button type="button" class="btn ghost" id="f-del-no">No</button>
+      </div>
+    </form>
+    </div>
+  </section>
+
+  <!-- HISTORIAL -->
+  <section id="view-hist" hidden style="flex-direction:column;gap:16px">
+    <div class="filter">
+      <div class="field"><label for="h-mes">Mes</label><input type="month" id="h-mes"></div>
+    </div>
+    <div class="totals">
+      <div><b id="h-dias">0</b><span>Días trabajados</span></div>
+      <div><b id="h-lab">0</b><span>Labores</span></div>
+      <div><b id="h-hh">0</b><span>Horas-hombre</span></div>
+    </div>
+    <ul class="days" id="h-lista"></ul>
+  </section>
+
+  <!-- RESUMEN -->
+  <section id="view-res" hidden style="flex-direction:column;gap:16px">
+    <div class="filter">
+      <div class="field"><label for="r-desde">Desde</label><input type="date" id="r-desde"></div>
+      <div class="field"><label for="r-hasta">Hasta</label><input type="date" id="r-hasta"></div>
+    </div>
+    <div class="totals">
+      <div><b id="r-disp">0</b><span>H-h disponibles</span></div>
+      <div><b id="r-uso">0</b><span>H-h registradas</span></div>
+      <div><b id="r-pct">–</b><span>Uso jornada</span></div>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Labor</th><th class="r">Días</th><th class="r">Pers. prom.</th><th class="r">Avance</th><th class="r">Horas-hombre</th></tr></thead>
+        <tbody id="r-body"></tbody>
+        <tfoot><tr><td>Total</td><td class="r" id="r-tdias"></td><td></td><td></td><td class="r" id="r-thh"></td></tr></tfoot>
+      </table>
+    </div>
+    <div class="note" id="r-modos"></div>
+    <p class="note">Horas-hombre = personas × horas de cada labor. Una jornada de 8 h con 10 personas son 80 horas-hombre (10 jornadas).</p>
+    <div class="actions"><button class="btn" id="r-csv">Descargar CSV del período</button></div>
+  </section>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+let LABORES = [];   // se carga desde la tabla labores_catalogo
+const modoDe = l => l.modo==="trato" ? "trato" : "dia";
+const modoTag = l => modoDe(l)==="trato" ? `<span class="tag trato">Al trato</span>` : `<span class="tag dia">Al día</span>`;
+const avanceTxt = l => modoDe(l)==="trato" && l.avance!=null && l.avance!=="" ? `${l.avance} ${l.unidad||""}`.trim() : "";
+function modoSel(){ return document.querySelector('input[name="modo"]:checked')?.value || "dia"; }
+function syncModo(){ $("trato-box").hidden = modoSel()!=="trato"; }
+document.querySelectorAll('input[name="modo"]').forEach(r=>r.addEventListener("change",syncModo));
+const $ = id => document.getElementById(id);
+const days = new Map();          // fecha -> {fecha, labores:[...]}
+let db = null, canWrite = true, editingId = null, view = "dia";
+
+const pad = n => String(n).padStart(2,"0");
+const iso = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const parse = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y,m-1,d); };
+const addDays = (s,n) => { const d = parse(s); d.setDate(d.getDate()+n); return iso(d); };
+const fmtNum = n => (Math.round(n*10)/10).toLocaleString("es-CL");
+const longDate = s => parse(s).toLocaleDateString("es-CL",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+const shortDate = s => parse(s).toLocaleDateString("es-CL",{weekday:"short",day:"numeric",month:"short"});
+const hh = l => (Number(l.personas)||0)*(Number(l.horas)||0);
+const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>t.hidden=true,2200); }
+
+// ---------- vistas ----------
+document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>show(b.dataset.view)));
+function show(v){
+  view=v;
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.view===v));
+  for(const k of ["dia","hist","res"]){ const s=$("view-"+k); s.hidden = k!==v; if(k===v) s.style.display="flex"; }
+  try{ localStorage.setItem("faenas-view",v);}catch(e){}
+  render();
+}
+
+// ---------- día ----------
+const hoy = iso(new Date());
+$("fecha").value = hoy;
+$("fecha").addEventListener("change",()=>{ resetForm(); render(); });
+$("prev").onclick=()=>{ $("fecha").value=addDays($("fecha").value||hoy,-1); resetForm(); render(); };
+$("next").onclick=()=>{ $("fecha").value=addDays($("fecha").value||hoy,1); resetForm(); render(); };
+$("hoy").onclick=()=>{ $("fecha").value=hoy; resetForm(); render(); };
+
+const JORNADA = 8;
+let dotEditing = false;
+const dotOf = f => Number(days.get(f)?.dotacion)||0;
+const usedHH = (f,excl) => (days.get(f)?.labores||[]).filter(l=>l.id!==excl).reduce((a,l)=>a+hh(l),0);
+
+function renderDia(){
+  const f = $("fecha").value || hoy;
+  $("dayname").textContent = longDate(f);
+  const labs = days.get(f)?.labores || [];
+  const dot = dotOf(f), max = dot*JORNADA, used = labs.reduce((a,l)=>a+hh(l),0);
+
+  const ask = !dot || dotEditing;
+  $("dot-form").hidden = !ask;
+  $("dia-body").hidden = ask;
+  if(ask){
+    $("dot-title").textContent = dotEditing ? "Cambiar dotación del día" : "Inicio del día";
+    $("d-save").textContent = dotEditing ? "Guardar dotación" : "Iniciar día";
+    $("d-cancel").hidden = !dotEditing;
+    if(!dotEditing && !$("d-personas").matches(":focus") && !$("d-personas").value && labs.length)
+      $("d-error").textContent="Este día tiene labores sin dotación registrada. Indica cuánta gente hubo.", $("d-error").hidden=false;
+    updateDotCalc();
+  }
+
+  $("t-dot").textContent = dot;
+  $("t-lab").textContent = labs.length;
+  $("t-hh").textContent = fmtNum(used);
+  $("t-rest").textContent = fmtNum(Math.max(0,max-used));
+  const pct = max ? Math.min(100, used/max*100) : 0;
+  $("cap-fill").style.width = pct.toFixed(1)+"%";
+  $("cap-fill").classList.toggle("full", max>0 && used>=max);
+  $("cap-txt").textContent = max ? (used>=max ? `Jornada completa: ${fmtNum(max)} de ${fmtNum(max)} horas-hombre asignadas.` : `${fmtNum(used)} de ${fmtNum(max)} horas-hombre asignadas (${dot} personas × ${JORNADA} h).`) : "";
+  const full = max>0 && used>=max && !editingId;
+  $("f-save").disabled = !canWrite || full;
+  if(full && !editingId) $("form-title").textContent = "Jornada completa: no quedan horas-hombre";
+  else if(!editingId) $("form-title").textContent = canWrite ? "Agregar labor del día" : "Solo lectura: no puedes agregar labores";
+  updateCalc();
+  if(!labs.length){
+    $("lista").innerHTML = `<div class="empty">Sin labores registradas este día.<br>Agrega la primera con el formulario de abajo.</div>`;
+  } else {
+    $("lista").innerHTML = `<ul class="labores">${labs.map(l=>`
+      <li data-id="${esc(l.id)}" class="${l.id===editingId?"editing":""}" tabindex="0" title="Tocar para editar">
+        <span class="lname">${esc(l.labor)}${modoTag(l)}</span>
+        <span class="lhh"><b>${fmtNum(hh(l))}</b><small>h-h</small></span>
+        <span class="lmeta"><span class="num">${esc(l.personas)}</span> pers. × <span class="num">${fmtNum(Number(l.horas))}</span> h${avanceTxt(l)?` · avance <b>${esc(avanceTxt(l))}</b>`:""}${l.cuartel?` · ${esc(l.cuartel)}`:""}${l.nota?`<br>${esc(l.nota)}`:""}</span>
+      </li>`).join("")}</ul>`;
+    $("lista").querySelectorAll("li").forEach(li=>{
+      const go=()=>editLabor(li.dataset.id);
+      li.onclick=go; li.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){e.preventDefault();go();} };
+    });
+  }
+  // sugerencias
+  const sug = new Set(LABORES), cu = new Set();
+  for(const d of days.values()) for(const l of d.labores||[]){ if(l.labor) sug.add(l.labor); if(l.cuartel) cu.add(l.cuartel); }
+  $("dl-labores").innerHTML=[...sug].map(x=>`<option value="${esc(x)}">`).join("");
+  $("dl-cuarteles").innerHTML=[...cu].map(x=>`<option value="${esc(x)}">`).join("");}
+
+function updateCalc(){
+  const f=$("fecha").value||hoy, dot=dotOf(f), p=Number($("f-personas").value)||0, h=Number($("f-horas").value)||0;
+  const este=p*h, rest=dot*JORNADA-usedHH(f,editingId);
+  const over = este>rest || p>dot || h>JORNADA;
+  $("calc").innerHTML = `Esta labor: <b>${fmtNum(este)}</b> h-h · quedan <b>${fmtNum(Math.max(0,rest-este))}</b> de <b>${fmtNum(Math.max(0,rest))}</b> disponibles`
+    + (over ? `<br><span class="warn">${p>dot?`Hoy hay solo ${dot} personas. `:""}${h>JORNADA?`La jornada es de ${JORNADA} h. `:""}${este>rest&&p<=dot&&h<=JORNADA?"Supera las horas-hombre que quedan.":""}</span>` : "");
+  $("f-personas").max = dot || "";
+}
+$("f-personas").oninput=updateCalc; $("f-horas").oninput=updateCalc;
+
+function updateDotCalc(){
+  const n=parseInt($("d-personas").value,10)||0;
+  $("d-calc").innerHTML = `Jornada de ${JORNADA} h · máximo <b>${fmtNum(n*JORNADA)}</b> horas-hombre`;
+}
+$("d-personas").oninput=()=>{ $("d-error").hidden=true; updateDotCalc(); };
+$("dot-edit").onclick=()=>{ dotEditing=true; $("d-personas").value=dotOf($("fecha").value||hoy)||""; $("d-error").hidden=true; renderDia(); $("d-personas").focus(); };
+$("d-cancel").onclick=()=>{ dotEditing=false; $("d-error").hidden=true; renderDia(); };
+$("dot-form").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const f=$("fecha").value||hoy, n=parseInt($("d-personas").value,10);
+  const labs=days.get(f)?.labores||[];
+  const err = m => { $("d-error").textContent=m; $("d-error").hidden=false; };
+  if(!(n>0)) return err("Indica cuántas personas trabajan hoy.");
+  const maxP = labs.length ? Math.max(...labs.map(l=>Number(l.personas)||0)) : 0;
+  const used = labs.reduce((a,l)=>a+hh(l),0);
+  if(n<maxP) return err(`Hay una labor registrada con ${maxP} personas. La dotación no puede ser menor.`);
+  if(n*JORNADA<used) return err(`Ya hay ${fmtNum(used)} horas-hombre asignadas; con ${n} personas el máximo es ${fmtNum(n*JORNADA)}. Ajusta las labores primero.`);
+  $("d-error").hidden=true;
+  if(await saveDay(f,labs,n)){ const was=dotEditing; dotEditing=false; $("d-personas").value=""; toast(was?"Dotación actualizada":"Día iniciado"); renderDia(); }
+});
+
+function editLabor(id){
+  const l = (days.get($("fecha").value)?.labores||[]).find(x=>x.id===id); if(!l) return;
+  editingId=id;
+  $("f-labor").value=l.labor||""; $("f-cuartel").value=l.cuartel||""; $("f-personas").value=l.personas; $("f-horas").value=l.horas; $("f-nota").value=l.nota||"";
+  $(modoDe(l)==="trato"?"m-trato":"m-dia").checked=true; $("f-avance").value=avanceTxt(l); syncModo();
+  $("form-title").textContent="Editar labor"; $("f-save").textContent="Guardar cambios";
+  $("f-cancel").hidden=false; $("f-del").hidden=!canWrite; $("f-confirm").hidden=true;
+  updateCalc(); renderDia();
+  $("form").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function resetForm(){
+  editingId=null; dotEditing=false; $("d-personas").value=""; $("d-error").hidden=true; $("form").reset(); $("f-error").hidden=true; syncModo();
+  $("form-title").textContent="Agregar labor del día"; $("f-save").textContent="Guardar labor";
+  $("f-cancel").hidden=true; $("f-del").hidden=true; $("f-confirm").hidden=true; updateCalc();
+}
+$("f-cancel").onclick=()=>{ resetForm(); renderDia(); };
+$("f-del").onclick=()=>{ $("f-confirm").hidden=false; };
+$("f-del-no").onclick=()=>{ $("f-confirm").hidden=true; };
+$("f-del-yes").onclick=async()=>{
+  const f=$("fecha").value, cur=days.get(f); if(!cur) return;
+  const labores = cur.labores.filter(l=>l.id!==editingId);
+  if(await saveDay(f,labores)){ resetForm(); toast("Labor eliminada"); }
+};
+
+$("form").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const labor=$("f-labor").value.trim(), personas=parseInt($("f-personas").value,10), horas=Number($("f-horas").value);
+  const err=[];
+  if(!labor) err.push("escribe la labor");
+  if(!(personas>0)) err.push("indica cuántas personas");
+  if(!(horas>0)) err.push("indica las horas");
+  const modo=modoSel(), avance=$("f-avance").value.trim(), cuartel=$("f-cuartel").value.trim();
+  if(!cuartel) err.push("indica el cuartel");
+  if(modo==="trato" && !avance) err.push("escribe el avance logrado");
+  if(err.length){ $("f-error").textContent="Falta: "+err.join(", ")+"."; $("f-error").hidden=false; return; }
+  const f=$("fecha").value||hoy, dot=dotOf(f), rest=dot*JORNADA-usedHH(f,editingId);
+  const lim = m => { $("f-error").textContent=m; $("f-error").hidden=false; };
+  if(!dot) return lim("Primero indica cuánta gente trabaja hoy.");
+  if(personas>dot) return lim(`Hoy hay ${dot} personas; la labor no puede tener más.`);
+  if(horas>JORNADA) return lim(`La jornada es de ${JORNADA} horas; una labor no puede durar más.`);
+  if(personas*horas>rest) return lim(`Esta labor suma ${fmtNum(personas*horas)} horas-hombre y solo quedan ${fmtNum(Math.max(0,rest))} disponibles.`);
+  $("f-error").hidden=true;
+  const item={ id: editingId || (Date.now().toString(36)+Math.random().toString(36).slice(2,6)), labor, modo, cuartel, personas, horas, nota:$("f-nota").value.trim() };
+  if(modo==="trato") item.avance=avance;
+  const labores=[...(days.get(f)?.labores||[])];
+  const i=labores.findIndex(l=>l.id===item.id);
+  if(i>=0) labores[i]=item; else labores.push(item);
+  if(await saveDay(f,labores)){ const wasEdit=!!editingId; resetForm(); toast(wasEdit?"Cambios guardados":"Labor guardada"); }
+});
+
+let writing = Promise.resolve();
+async function saveDay(fecha,labores,dotacion=dotOf(fecha)){
+  if(!db){ toast("Sin conexión al registro"); return false; }
+  $("f-save").disabled=true;
+  const prev=days.get(fecha);
+  days.set(fecha,{fecha,dotacion,labores}); render();
+  let ok=true;
+  writing = writing.then(async()=>{
+    try{
+      const r = (labores.length || dotacion)
+        ? await db.from("jornadas").upsert({fecha,dotacion:dotacion||null,labores,actualizado:new Date().toISOString()},{onConflict:"fecha"})
+        : await db.from("jornadas").delete().eq("fecha",fecha);
+      if(r.error) throw r.error;
+    }catch(e){
+      ok=false;
+      if(prev) days.set(fecha,prev); else days.delete(fecha);
+      if(e?.code==="42501"){ canWrite=false; applyWrite(); toast("Tu cuenta no tiene permiso para editar el registro"); }
+      else if(e?.code==="PGRST301"||/JWT/i.test(e?.message||"")) toast("Tu sesión expiró. Vuelve a ingresar.");
+      else toast("No se pudo guardar. Revisa tu conexión e inténtalo otra vez.");
+      render();
+    }
+  });
+  await writing; render();
+  return ok;
+}
+
+// ---------- historial ----------
+$("h-mes").value = hoy.slice(0,7);
+$("h-mes").onchange=render;
+function renderHist(){
+  const m=$("h-mes").value;
+  const list=[...days.values()].filter(d=>d.fecha.startsWith(m)&&(d.labores?.length||d.dotacion)).sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  let nl=0, th=0;
+  list.forEach(d=>{ const L=d.labores||[]; nl+=L.length; th+=L.reduce((a,l)=>a+hh(l),0); });
+  $("h-dias").textContent=list.length; $("h-lab").textContent=nl; $("h-hh").textContent=fmtNum(th);
+  $("h-lista").innerHTML = list.length ? list.map(d=>{
+    const t=(d.labores||[]).reduce((a,l)=>a+hh(l),0), mx=(Number(d.dotacion)||0)*JORNADA;
+    return `<li data-f="${d.fecha}" tabindex="0"><span class="dtitle">${esc(shortDate(d.fecha))}${d.dotacion?` <span class="muted" style="font-weight:400">· ${esc(d.dotacion)} pers.</span>`:""}</span><span class="num">${fmtNum(t)}${mx?` / ${fmtNum(mx)}`:""} h-h</span>
+      <span class="chips">${(d.labores||[]).map(l=>`<span class="chip ${modoDe(l)}">${esc(l.labor)} · ${modoDe(l)==="trato"?`trato ${esc(avanceTxt(l))}`:"al día"} · ${esc(l.personas)}p × ${fmtNum(Number(l.horas))}h</span>`).join("")}</span></li>`;
+  }).join("") : `<li class="empty" style="display:block;cursor:default">No hay días registrados en este mes.</li>`;
+  $("h-lista").querySelectorAll("li[data-f]").forEach(li=>{
+    const go=()=>{ $("fecha").value=li.dataset.f; resetForm(); show("dia"); };
+    li.onclick=go; li.onkeydown=e=>{ if(e.key==="Enter"){go();} };
+  });
+}
+
+// ---------- resumen ----------
+{ const d=new Date(); $("r-desde").value=iso(new Date(d.getFullYear(),d.getMonth(),1)); $("r-hasta").value=hoy; }
+$("r-desde").onchange=render; $("r-hasta").onchange=render;
+function periodRows(){
+  const a=$("r-desde").value||"0000", b=$("r-hasta").value||"9999", rows=[];
+  for(const d of days.values()) if(d.fecha>=a && d.fecha<=b) for(const l of d.labores||[]) rows.push({fecha:d.fecha,...l});
+  return rows.sort((x,y)=>x.fecha.localeCompare(y.fecha));
+}
+function renderRes(){
+  const rows=periodRows(), by=new Map();
+  for(const r of rows){
+    const modo=modoDe(r), k=r.labor+"|"+modo;
+    const g=by.get(k)||{labor:r.labor,modo,dias:new Set(),pers:0,n:0,hh:0,av:[]};
+    g.dias.add(r.fecha); g.pers+=Number(r.personas)||0; g.n++; g.hh+=hh(r);
+    if(modo==="trato" && avanceTxt(r)) g.av.push(`<span class="muted">${esc(shortDate(r.fecha))}:</span> ${esc(avanceTxt(r))}`);
+    by.set(k,g);
+  }
+  const groups=[...by.values()].sort((a,b)=>b.hh-a.hh), max=Math.max(1,...groups.map(g=>g.hh));
+  $("r-body").innerHTML = groups.length ? groups.map(g=>`<tr><td>${esc(g.labor)}${modoTag(g)}<div class="bar" style="width:${(g.hh/max*100).toFixed(1)}%"></div></td>
+    <td class="r">${g.dias.size}</td><td class="r">${fmtNum(g.pers/g.n)}</td>
+    <td class="r" style="font-family:var(--f-body);font-size:14px">${g.modo==="trato"&&g.av.length?g.av.join("<br>"):"—"}</td><td class="r">${fmtNum(g.hh)}</td></tr>`).join("")
+    : `<tr><td colspan="5" class="muted">No hay labores en este período.</td></tr>`;
+  const hhD=rows.filter(r=>modoDe(r)==="dia").reduce((a,r)=>a+hh(r),0), hhT=rows.filter(r=>modoDe(r)==="trato").reduce((a,r)=>a+hh(r),0);
+  $("r-modos").innerHTML = rows.length ? `<span class="tag dia" style="margin:0">Al día</span> ${fmtNum(hhD)} h-h &nbsp; <span class="tag trato" style="margin:0">Al trato</span> ${fmtNum(hhT)} h-h` : "";
+  $("r-tdias").textContent=new Set(rows.map(r=>r.fecha)).size;
+  const usoT=rows.reduce((a,r)=>a+hh(r),0);
+  $("r-thh").textContent=fmtNum(usoT);
+  const a=$("r-desde").value||"0000", b=$("r-hasta").value||"9999";
+  let disp=0; for(const d of days.values()) if(d.fecha>=a&&d.fecha<=b) disp+=(Number(d.dotacion)||0)*JORNADA;
+  $("r-disp").textContent=fmtNum(disp); $("r-uso").textContent=fmtNum(usoT);
+  $("r-pct").textContent = disp ? Math.round(usoT/disp*100)+"%" : "–";
+}
+
+$("r-csv").onclick=()=>{
+  const rows=periodRows();
+  if(!rows.length){ toast("No hay datos en el período"); return; }
+  const q=v=>{ const s=String(v??""); return /[";\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; };
+  const dec=v=>v==null||v===""?"":String(v).replace(".",",");
+  const lines=["Fecha;Labor;Cuartel;Forma de pago;Avance logrado;Personas;Horas;Horas-hombre;Observación",
+    ...rows.map(r=>{ const t=modoDe(r)==="trato"; return [r.fecha,r.labor,r.cuartel,t?"Al trato":"Al día",t?avanceTxt(r):"",r.personas,dec(r.horas),dec(hh(r)),r.nota].map(q).join(";"); })];
+  const blob=new Blob(["﻿"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download=`faenas_${$("r-desde").value}_a_${$("r-hasta").value}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
+
+function render(){ if(view==="dia") renderDia(); else if(view==="hist") renderHist(); else renderRes(); }
+function applyWrite(){
+  ["f-labor","f-cuartel","f-personas","f-horas","f-nota","f-save"].forEach(id=>$(id).disabled=!canWrite);
+  if(!canWrite){ $("f-del").hidden=true; $("form-title").textContent="Solo lectura: no puedes agregar labores"; }
+}
+
+// ---------- arranque ----------
+try{ const v=localStorage.getItem("faenas-view"); if(v && v!=="dia") show(v); }catch(e){}
+render();
+
+// ---------- Supabase: sesión y datos ----------
+const cfg = window.LIBRO_FAENAS_CONFIG || {};
+let canal = null;
+
+function setStatus(){
+  $("status").textContent = `${days.size} día${days.size===1?"":"s"} registrado${days.size===1?"":"s"} · se guarda automáticamente`;
+}
+async function cargarJornadas(){
+  const { data, error } = await db.from("jornadas").select("fecha,dotacion,labores,actualizado").order("fecha",{ascending:false}).limit(2000);
+  if(error){ $("status").textContent="No se pudieron cargar los registros. Revisa tu conexión y recarga."; return; }
+  days.clear();
+  data.forEach(v=>days.set(v.fecha,{fecha:v.fecha,dotacion:v.dotacion,labores:v.labores||[]}));
+  setStatus(); render();
+}
+async function cargarCatalogo(){
+  const { data } = await db.from("labores_catalogo").select("nombre,familia").order("nombre");
+  LABORES = [...new Set((data||[]).map(r=>r.nombre))];
+  render();
+}
+function escuchar(){
+  if(canal) db.removeChannel(canal);
+  canal = db.channel("jornadas-cambios")
+    .on("postgres_changes",{event:"*",schema:"public",table:"jornadas"},p=>{
+      if(p.eventType==="DELETE"){ if(p.old?.fecha) days.delete(p.old.fecha); }
+      else if(p.new?.fecha){ days.set(p.new.fecha,{fecha:p.new.fecha,dotacion:p.new.dotacion,labores:p.new.labores||[]}); }
+      setStatus(); render();
+    })
+    .subscribe();
+}
+
+async function entrar(session){
+  $("login").hidden=true; $("who").hidden=false; $("who-email").textContent=session.user.email||"";
+  $("status").textContent="Cargando registros…";
+  const { data: m } = await db.from("miembros").select("email").limit(1);
+  if(!m || !m.length){
+    $("app").hidden=true;
+    $("status").textContent="Tu cuenta aún no está habilitada para el Libro de Faenas. Pide al administrador que te agregue.";
+    return;
+  }
+  $("app").hidden=false; canWrite=true; applyWrite();
+  await Promise.all([cargarJornadas(), cargarCatalogo()]);
+  escuchar();
+}
+function salir(){
+  if(canal){ db.removeChannel(canal); canal=null; }
+  days.clear(); $("app").hidden=true; $("who").hidden=true; $("login").hidden=false;
+  $("status").textContent="Ingresa con tu email y contraseña.";
+}
+
+$("login").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const email=$("l-email").value.trim(), password=$("l-pass").value;
+  if(!email||!password){ $("l-error").textContent="Escribe tu email y tu contraseña."; $("l-error").hidden=false; return; }
+  $("l-btn").disabled=true; $("l-error").hidden=true;
+  const { error } = await db.auth.signInWithPassword({email,password});
+  $("l-btn").disabled=false;
+  if(error){
+    $("l-error").textContent = /invalid/i.test(error.message) ? "Email o contraseña incorrectos." : "No se pudo ingresar: "+error.message;
+    $("l-error").hidden=false;
+  } else { $("l-pass").value=""; }
+});
+$("logout").onclick=async()=>{ await db.auth.signOut(); };
+
+// recargar al volver a la pestaña (por si el celular estuvo bloqueado)
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden && !$("app").hidden) cargarJornadas(); });
+
+if(!cfg.supabaseUrl || !cfg.supabaseKey || !window.supabase){
+  $("status").textContent="Falta la configuración de Supabase (config.js).";
+} else {
+  db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
+  let actual=null;
+  db.auth.onAuthStateChange((evento, session)=>{
+    const id=session?.user?.id||null;
+    if(id && id!==actual){ actual=id; setTimeout(()=>entrar(session),0); }
+    else if(!id){ actual=null; setTimeout(salir,0); }
+  });
+}
+</script>
+</body>
+</html>
